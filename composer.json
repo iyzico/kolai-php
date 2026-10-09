@@ -1,0 +1,32 @@
+{
+  "name": "iyzico/kolai-php",
+  "type": "library",
+  "description": "Kolai e-ticaret entegrasyonlari icin platformdan bagimsiz cekirdek: HMAC auth, yanit protokolu, adres/urun/yorum eslemesi, sozlesme sablonlari, iyzico iade/iptal.",
+  "homepage": "https://www.iyzico.com",
+  "keywords": ["kolai", "iyzico", "iyzipay", "woocommerce", "magento", "opencart", "prestashop"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "iyzico and contributors",
+      "homepage": "https://github.com/iyzico/kolai-php/contributors"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "iyzico/iyzipay-php": "^2.0",
+    "psr/log": "^1.1 || ^2.0 || ^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Kolai\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/selfcheck.php"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
