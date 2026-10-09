@@ -207,11 +207,11 @@ check(
 // No district at all: the province name beats a blank city.
 check(
     'missing district falls back to the province name',
-    AddressNormalizer::destination(['countryId' => 'TR', 'cityId' => '34'])['city'] === 'Istanbul'
+    AddressNormalizer::destination(['countryId' => 'TR', 'cityId' => '34'])['city'] === 'İstanbul'
 );
 check(
     'empty-string district is treated as missing',
-    AddressNormalizer::destination(['countryId' => 'TR', 'cityId' => '35', 'town' => ''])['city'] === 'Izmir'
+    AddressNormalizer::destination(['countryId' => 'TR', 'cityId' => '35', 'town' => ''])['city'] === 'İzmir'
 );
 
 // Non-TR must pass through untouched — no plate-code padding.
@@ -253,7 +253,7 @@ check('unknown plate code is rejected', TurkeyProvinces::plateCode('99') === '')
 check('plate code accepts bare, padded and prefixed forms', TurkeyProvinces::plateCode('6') === '06'
     && TurkeyProvinces::plateCode('06') === '06'
     && TurkeyProvinces::plateCode('TR06') === '06');
-check('province name resolves', TurkeyProvinces::name('34') === 'Istanbul');
+check('province name resolves', TurkeyProvinces::name('34') === 'İstanbul');
 
 // Str::clean strips control characters and the Unicode line/paragraph separators.
 check('control characters are stripped', Str::clean("a\x07b") === 'a b');
