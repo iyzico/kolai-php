@@ -11,6 +11,10 @@
       "homepage": "https://github.com/iyzico/kolai-php/contributors"
     }
   ],
+  "support": {
+    "issues": "https://github.com/iyzico/kolai-php/issues",
+    "source": "https://github.com/iyzico/kolai-php"
+  },
   "require": {
     "php": ">=7.4",
     "ext-json": "*",
