@@ -195,8 +195,13 @@ kendisi tamamen mağazanın.
 
 Satıcı yer tutucuları mağaza ayarlarından doldurulur, alıcı ve sipariş yer
 tutucuları çıkışta Kolai doldursun diye bırakılır. Ayarı verilmeyen bir yer
-tutucu boşaltılmaz, yerinde kalır: hukuki bir metinde boş MERSİS satırı, görünür
-şekilde doldurulmamış olandan kötüdür.
+tutucu boşaltılmaz, yerinde kalır: hukuki bir metinde eksik bir zorunlu bilgi
+boş satır olarak değil, görünür şekilde doldurulmamış olarak kalmalıdır.
+
+Tek istisna opsiyonel olan MERSİS numarasıdır: `seller_mersis_no` verilmezse
+veya boşsa, `MERSIS No: {{seller_mersis_no}}` satırı (önündeki/arkasındaki
+`<br>` ile birlikte) sözleşmeden çıkarılır. Yer tutucu bir cümlenin içindeyse
+yalnızca yer tutucu silinir.
 
 Mağaza `{{kargo_firmasi}}` gibi kimsenin dolduramayacağı bir yer tutucu
 uydurabilir; o da müşteriye düz süslü parantez olarak gider. Yönetim ekranında

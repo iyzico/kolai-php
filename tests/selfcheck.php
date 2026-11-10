@@ -460,8 +460,57 @@ check('substituted placeholder is gone', strpos($contract['content'], '{{seller_
 // Buyer/order placeholders stay for Kolai to fill at checkout.
 check('order placeholders are preserved', strpos($contract['content'], '{{buyer_name}}') !== false);
 check('preserved placeholders are reported', isset($contract['placeholders']['{{buyer_name}}']));
-// An unset setting keeps its placeholder rather than blanking a legal line.
-check('unset seller setting keeps its placeholder', strpos($contract['content'], '{{seller_mersis_no}}') !== false);
+// An unset required setting keeps its placeholder rather than blanking a legal line.
+check('unset seller setting keeps its placeholder', strpos($contract['content'], '{{seller_phone}}') !== false);
+
+// MERSIS is optional: when unset or blank, its line is removed instead.
+foreach ([[], ['seller_mersis_no' => ''], ['seller_mersis_no' => '  ']] as $mersisSettings) {
+    foreach ([ContractTemplates::DISTANCE_SALES, ContractTemplates::PRELIMINARY_INFO] as $mersisType) {
+        $mersisContent = ContractTemplates::render(
+            $mersisType,
+            null,
+            ['seller_tax_id' => '1234567890'] + $mersisSettings
+        )['content'];
+        check("unset MERSIS line is removed ({$mersisType})", stripos($mersisContent, 'MERSIS') === false);
+        check("VKN line closes the seller block ({$mersisType})", strpos($mersisContent, "<strong>VKN:</strong> 1234567890\n</p>") !== false);
+    }
+}
+check(
+    'set MERSIS is substituted',
+    strpos(
+        ContractTemplates::render(ContractTemplates::DISTANCE_SALES, null, ['seller_tax_id' => '1', 'seller_mersis_no' => '0123'])['content'],
+        "<strong>VKN:</strong> 1<br>\n<strong>MERSIS No:</strong> 0123\n</p>"
+    ) !== false
+);
+$mersisCases = [
+    'MERSIS in the middle of a block' => [
+        "<p>\n<strong>VKN:</strong> 1<br>\n<strong>MERSIS No:</strong> {{seller_mersis_no}}<br>\n<strong>Tel:</strong> 2\n</p>",
+        "<p>\n<strong>VKN:</strong> 1<br>\n<strong>Tel:</strong> 2\n</p>",
+    ],
+    'MERSIS last on a single line' => [
+        '<p><strong>VKN:</strong> 1<br /><strong>MERSIS No:</strong> {{seller_mersis_no}}</p><p>x</p>',
+        '<p><strong>VKN:</strong> 1</p><p>x</p>',
+    ],
+    'MERSIS first on a single line' => [
+        '<p><strong>MERSIS No:</strong> {{seller_mersis_no}}<br /><strong>VKN:</strong> 1</p>',
+        '<p><strong>VKN:</strong> 1</p>',
+    ],
+    'MERSIS in its own paragraph' => [
+        "<p>VKN</p>\n<p><strong>MERSIS No:</strong> {{seller_mersis_no}}</p>\n<p>End</p>",
+        "<p>VKN</p>\n<p>End</p>",
+    ],
+    'MERSIS with CRLF line endings' => [
+        "<p>\r\n<b>VKN:</b> 1<br />\r\nMERSIS: {{seller_mersis_no}}\r\n</p>",
+        "<p>\r\n<b>VKN:</b> 1\r\n</p>",
+    ],
+    'MERSIS inside a sentence keeps the sentence' => [
+        '<p>Satici MERSIS {{seller_mersis_no}} ile kayitli olup bu sozlesmeyi kabul eder.</p>',
+        '<p>Satici MERSIS  ile kayitli olup bu sozlesmeyi kabul eder.</p>',
+    ],
+];
+foreach ($mersisCases as $mersisName => [$mersisStored, $mersisExpected]) {
+    check($mersisName, ContractTemplates::render(ContractTemplates::DISTANCE_SALES, $mersisStored, [])['content'] === $mersisExpected);
+}
 check(
     'a stored template overrides the default',
     ContractTemplates::render(ContractTemplates::DISTANCE_SALES, '<p>{{buyer_name}}</p>', [])['content'] === '<p>{{buyer_name}}</p>'

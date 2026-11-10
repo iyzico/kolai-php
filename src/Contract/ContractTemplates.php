@@ -69,6 +69,16 @@ final class ContractTemplates
         '{{right_of_withdrawal_period}}' => 'Cayma hakkı süresi',
     ];
 
+    /**
+     * Seller placeholders the store may leave empty. When unset, their line is
+     * removed from the contract rather than left as a visible placeholder.
+     *
+     * @var array<int,string>
+     */
+    private const OPTIONAL_SELLER_PLACEHOLDERS = [
+        '{{seller_mersis_no}}',
+    ];
+
     private function __construct()
     {
     }
@@ -128,14 +138,24 @@ final class ContractTemplates
     }
 
     /**
-     * An absent setting leaves its placeholder in place rather than blanking it:
-     * an empty MERSIS line in a legal document is worse than a visibly unfilled
-     * one.
+     * An absent setting leaves its placeholder in place rather than blanking it,
+     * so a missing required value stays visible instead of becoming an empty
+     * line in a legal document.
+     *
+     * Optional settings (MERSIS) are the exception: when absent, their labelled
+     * line is removed from the contract instead.
      *
      * @param array<string,string> $settings Keys without braces.
      */
     public static function applySellerSettings(string $template, array $settings): string
     {
+        foreach (self::OPTIONAL_SELLER_PLACEHOLDERS as $placeholder) {
+            $key = trim($placeholder, '{}');
+            if (!isset($settings[$key]) || trim($settings[$key]) === '') {
+                $template = self::removeOptionalPlaceholder($template, $placeholder);
+            }
+        }
+
         $replacements = [];
         foreach (array_keys(self::SELLER_PLACEHOLDERS) as $placeholder) {
             $key = trim($placeholder, '{}');
@@ -145,6 +165,44 @@ final class ContractTemplates
         }
 
         return $replacements === [] ? $template : strtr($template, $replacements);
+    }
+
+    /**
+     * Remove the label of an optional, unset placeholder from contract HTML.
+     *
+     * A segment such as `<strong>MERSIS No:</strong> {{seller_mersis_no}}` is
+     * removed together with the `<br>` that separates it from its neighbours,
+     * whether the segments are on separate lines or on one line (as WYSIWYG
+     * editors may save them). A paragraph that holds only that label is
+     * removed. When the placeholder sits inside running text, only the
+     * placeholder itself is removed so the surrounding sentence is left intact.
+     */
+    private static function removeOptionalPlaceholder(string $template, string $placeholder): string
+    {
+        if (strpos($template, $placeholder) === false) {
+            return $template;
+        }
+
+        $ph    = preg_quote($placeholder, '/');
+        $label = '(?:<(?:strong|b)>[^<]{0,40}<\/(?:strong|b)>|[^<>\r\n]{0,40})[ \t]*';
+        $br    = '<br\s*\/?>';
+        $nl    = '(?:\r\n|\n|\r)';
+
+        $patterns = [
+            // A paragraph holding only the label: drop the whole paragraph.
+            '/<p[^>]*>\s*' . $label . $ph . '\s*(?:' . $br . '\s*)?<\/p>[ \t]*' . $nl . '?/i' => '',
+            // Label followed by <br>: drop the label, its <br> and its line break.
+            '/(^[ \t]*|' . $br . '[ \t]*|<p[^>]*>[ \t]*)' . $label . $ph . '[ \t]*' . $br . '[ \t]*' . $nl . '?/im' => '$1',
+            // Last label of its block: drop it together with the preceding <br>.
+            '/' . $br . '[ \t]*' . $nl . '?[ \t]*' . $label . $ph . '[ \t]*(?=' . $nl . '?[ \t]*<\/|\z)/i' => '',
+        ];
+
+        foreach ($patterns as $pattern => $replacement) {
+            $template = (string) preg_replace($pattern, $replacement, $template);
+        }
+
+        // Anything left is inline text: remove only the placeholder.
+        return str_replace($placeholder, '', $template);
     }
 
     /** @return array<string,string> Order placeholders still in the content. */
